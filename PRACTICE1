@@ -1,0 +1,152 @@
+--QUESTION 1
+/*Retrieve all the data in the film table*/
+select 
+*
+from
+film;
+
+--QUESTION 2
+/*Retrieve only the film ID, title and rating from the film data*/
+SELECT 
+film_id, title, rating
+FROM 
+film;
+
+--QUESTION 3
+/*Order the data by the film id and display the first 10 results only in Q2*/
+SELECT 
+film_id, title, rating
+FROM 
+film
+ORDER BY film_id
+LIMIT 10;
+
+--QUESTION 4
+/*Display film titles and their length. Sort from the highest lengths to the
+lowest. Display 20 results only*/
+SELECT title, length
+FROM 
+film
+ORDER BY length DESC
+LIMIT 10;
+
+--QUESTION 5
+/*Reorder the results in Q4 from the lowest length to the highest length. Use 
+ALIASING for your columns and COLUMN INDEXING in your ORDER BY statement*/
+SELECT title AS Movie_Name, length AS DURATION
+FROM film
+ORDER BY 2
+LIMIT 20;
+
+--QUESTION 6
+/*Produce a table with a new column deriving the difference in replacement 
+cost and rental rate*/
+SELECT replacement_cost, rental_rate,
+		replacement_cost-rental_rate AS price_diff
+FROM film;
+
+--QUESTION 7
+--Show all movie titles satisfying the ffg conditions
+/*a. Only 'PG' rating. Sort in descending alphabetical order*/
+SELECT title, rating
+FROM film
+WHERE rating ='PG'
+ORDER BY 1 DESC;
+
+/*b. 'PG', 'R' or 'G' rating only*/
+SELECT title, rating
+FROM film
+WHERE rating IN ('PG', 'R','G')
+ORDER BY 1 DESC;
+
+/*c. Movie length not more than 60 mins. Sort length from highest to lowest*/
+SELECT title, length
+FROM film
+WHERE length <= 60
+ORDER BY 2 DESC;
+
+/*d. 'R' rated movies with movie lengths between 60 and 100 minutes.
+	sort from the longer movies and then by movie titles in an alphabetical 
+	order*/
+SELECT title, rating, length
+FROM film
+WHERE rating ='R' AND length BETWEEN 60 AND 100
+ORDER BY 3 DESC, 1;
+
+/*e. Movie description containing the word 'drama'. Sort by movie title and
+	display first 15 results only*/
+SELECT title, description
+FROM film
+WHERE description like '%Drama%'
+LIMIT 15;
+
+
+---------------------------AGGREGATE FUNCTIONS-------------------------------
+--QUESTION 8
+/*
+Obtain the ffg results using aggregate functions
+a. How many movies are available on the data base*/
+SELECT COUNT(title) AS no_of_movies
+FROM film;
+
+/*b. How many movie categories are there*/
+SELECT COUNT (name) AS no_of_categories
+FROM category;
+
+/*c. What is the highest replacement cost of any movie on the database
+	 (Also try and derive this ans without using an agrregate function*/
+SELECT MAX(replacement_cost) AS highest_replacement_cost
+FROM film;
+
+--Alternative solution
+SELECT replacement_cost
+FROM film
+ORDER BY 1 DESC
+LIMIT 100;
+
+
+--QUESTION 9
+/*
+How many movies are of similar lengths in the database? Sort from highest
+movie count.
+*/
+SELECT length AS movie_duration, COUNT(*) AS no_of_movies
+FROM film
+GROUP BY 1
+ORDER BY 2 DESC;
+
+
+--QUESTION 10
+/*
+How many movies which have a replacement cost of '20.99' or '13.99', 
+contain the word 'Drama' in thier description and have either of an
+'R', 'NC-17' or 'PG' rating?
+*/
+SELECT COUNT(*) AS no_of_movies
+FROM film
+WHERE replacement_cost IN (20.99,13.99)
+	  AND description LIKE '%Drama%'
+	  AND rating IN ('R','NC-17','PG');
+	  
+	  
+--QUESTION 11
+/*
+Create a table with three categories of movie lengths and name them as such:
+0 - 59 minutes, Short movie
+60 - 119 minutes, Moderately long movie
+120 or more minutes, Long movie.
+Let the table show the count of movies that fall under each category.
+*/
+SELECT CASE WHEN length BETWEEN 0 AND 59 THEN 'Short movies'
+			WHEN length BETWEEN 60 AND 119 THEN 'Moderately long movies'
+			ELSE 'Long movies'
+			END AS movie_length_category,
+		COUNT(*) AS no_of_movies
+FROM film
+GROUP BY 1
+ORDER BY 2 DESC;
+
+
+---------------------------*******JOINS*******-------------------------------
+
+
