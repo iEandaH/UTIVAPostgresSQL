@@ -1,0 +1,201 @@
+---------------------------*******JOINS*******-------------------------------
+--QUESTION 1
+/*a. Classify every movie by its category*/
+SELECT f.title AS movie_name, c.name AS movie_category 
+FROM category AS c
+JOIN film_category AS fc
+ON c.category_id = fc.category_id
+JOIN film AS f
+ON f.film_id = fc.film_id
+Limit 20;
+
+
+/*b. List the  first name and last name of every actor for each movie */
+SELECT a.first_name, a.last_name, f.title
+FROM actor AS a
+JOIN film_actor AS fa
+ON a.actor_id = fa.actor_id
+JOIN film AS f 
+ON f.film_id = fa.film_id;
+
+
+/*c. List every movie, the date it was rented and it was returned,
+	 the first and last name of the customer who did the business,
+	 the amount paid and the city the business took place */
+SELECT f.title AS movie_name,
+		r.rental_date,
+		r.return_date,
+		cu.first_name,
+		p.amount,
+		ci.city
+FROM film AS f
+JOIN inventory AS i
+ON f.film_id = i.film_id
+JOIN rental AS r
+ON i.inventory_id = r.inventory_id
+JOIN payment AS p
+ON r.rental_id = p.rental_id
+JOIN customer AS cu
+ON cu.customer_id = p.customer_id
+JOIN address AS a
+ON cu.address_id = a.address_id
+JOIN city AS ci
+ON ci.city_id = a.city_id;
+
+
+/*d. How many cities are in each country on the data base. Sort from 
+	 Country with the most cities to the least*/
+SELECT co.country, COUNT(ci.city) AS no_of_cities
+FROM country AS co
+JOIN city as ci
+ON ci.country_id = co.country_id
+GROUP BY 1
+ORDER BY 2 DESC;
+
+
+/*e. What movies were the most rented in Nigerian cities. Sort from 
+	 highest rent count to the lowest */
+SELECT f.title, COUNT(r.rental_id) AS no_of_times_rented
+FROM film AS f
+JOIN inventory AS i
+ON f.film_id = i.film_id
+JOIN rental AS r
+ON r.inventory_id = i.inventory_id
+JOIN staff AS st
+ON st.staff_id = i.staff_id
+JOIN address AS a
+ON a.address_id = st.address_id
+JOIN city AS ci
+ON ci.city_id = a.city_id
+JOIN country AS co
+ON co.country_id = ci.country_id
+WHERE co.country = 'Nigeria'
+GROUP BY 1
+ORDER BY 2;
+
+
+/*f. Our company is offering a special discount to our most frequent customers this upcoming
+	 holiday season. For this we need the top 30 highest paying customers and we aslo want
+	 to see how many rentals have been made */
+SELECT cu.first_name||' '||cu.last_name AS customer_name,
+		SUM(p.amount) AS total_amount_spent,
+		COUNT(r.rental_id) AS total_rent_count
+FROM customer AS cu
+JOIN payment AS p
+ON cu.customer_id = p.customer_id
+JOIN rental AS r
+ON r.rental_id = p.rental_id
+GROUP BY 1
+ORDER BY 2 DESC
+LIMIT 10;
+
+
+
+---------------------------*******SUBQUERIES&COMMONTABLEEXPRESSIONS*******-------------------------------
+--SQL uses results of temporary tables such as SubQueries and CTEs for further queries
+--SubQueries and CTEs do the samething however SubQueries are written as subsections within 
+--the body while CTEs are written prior to main query.
+--All temp tables must be Aliased and CTEs start with keyword WITH
+
+--QUESTION 1
+/*
+a. Return a table displaying how much individual customers spent on renting in the month of 
+February alone?
+
+Using this obtained data, determine the highest, lowest and average amount spent for the 
+month of February?
+*/
+SELECT MAX(total_amt_spent) AS highest_amt,
+	   MIN(total_amt_spent) AS lowest_amt,
+	   AVG(total_amt_spent) AS avg_amt
+FROM
+	(SELECT cu.first_name||' '||cu.last_name AS full_name,
+		SUM(p.amount) AS total_amt_spent
+	FROM customer AS cu
+	JOIN payment AS p
+	ON cu.customer_id = p.customer_id
+	WHERE DATE_PART('month',payment_date) = 2
+	GROUP BY 1
+	ORDER BY 2 DESC) AS old_query;
+
+
+--CTEs
+WITH t1 AS 
+	(SELECT cu.first_name||' '||cu.last_name AS full_name,
+		SUM(p.amount) AS total_amt_spent
+	FROM customer AS cu
+	JOIN payment AS p
+	ON cu.customer_id = p.customer_id
+	WHERE DATE_PART('month',payment_date) = 2
+	GROUP BY 1
+	ORDER BY 2 DESC)
+	
+SELECT MAX(total_amt_spent) AS highest_amt,
+	   MIN(total_amt_spent) AS lowest_amt,
+	   AVG(total_amt_spent) AS avg_amt
+FROM t1;
+
+
+/*
+b. Generate a table showing the most rented categories of movies. Using the new table futher
+classify the movie categories into parent categories with the ffg guides:
+
+Parent Category		Subcategory
+Family-friendly		Family, Comedy, Drama, Animation, Children and Music
+Reality				Games, Documentary, Sports and Travel
+Mature Audiences	Horror, Actions, Classics and Sci-Fi
+Others				New and Foreign
+
+Finally, provide the total number of movies rented in each parent category and order by most
+rented parent category
+*/
+SELECT parent_category, SUM(rent_count) AS total_no_of_movies
+FROM
+	(SELECT CASE WHEN category_name IN ('Family','Comedy','Drama','Animation','Children','Music') THEN 'Family_friendly'
+			WHEN category_name IN ('Games','Documentary','Sports','Travel') THEN 'Reality'
+			WHEN category_name IN ('Horror','Action','Classic','Sci-Fi') THEN 'Mature Audiences'
+			ELSE 'Others' END AS parent_category,
+		rent_count
+FROM
+	(SELECT c.name AS category_name, COUNT(r.rental_id) AS rent_count
+	FROM category AS c
+	JOIN film_category AS fc
+	ON c.category_id = fc.category_id
+	JOIN film AS f
+	ON f.film_id = fc.film_id
+	JOIN inventory AS i
+	ON i.film_id = f.film_id
+	JOIN rental AS r
+	ON i.inventory_id = r.inventory_id
+	GROUP BY 1
+	ORDER BY 2 DESC) AS sub1) AS sub2
+	GROUP BY 1
+	ORDER BY 2 DESC;
+
+--CTEs
+WITH table1 AS 
+	(SELECT c.name AS category_name, COUNT(r.rental_id) AS rent_count
+	FROM category AS c
+	JOIN film_category AS fc
+	ON c.category_id = fc.category_id
+	JOIN film AS f
+	ON f.film_id = fc.film_id
+	JOIN inventory AS i
+	ON i.film_id = f.film_id
+	JOIN rental AS r
+	ON i.inventory_id = r.inventory_id
+	GROUP BY 1
+	ORDER BY 2 DESC),
+	
+	table2 AS
+	(SELECT CASE WHEN category_name IN ('Family','Comedy','Drama','Animation','Children','Music') THEN 'Family_friendly'
+			WHEN category_name IN ('Games','Documentary','Sports','Travel') THEN 'Reality'
+			WHEN category_name IN ('Horror','Action','Classic','Sci-Fi') THEN 'Mature Audiences'
+			ELSE 'Others' END AS parent_category,
+		rent_count
+	 FROM table1)
+	
+SELECT parent_category, SUM(rent_count) AS total_no_of_movies
+FROM table2
+GROUP BY 1
+	ORDER BY 2 DESC;
