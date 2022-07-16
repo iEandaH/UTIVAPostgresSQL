@@ -1,0 +1,55 @@
+-------------------------------------DATA CLEANING IN SQL---------------------------------------
+----LEFT & RIGHT EXERCISES
+/*1. 
+In the customer table, there is a column holding the first name for each customer.
+Pull out the first alphabets and provide a count of how many people fall under 
+each category of a similar alphabet letter starting their name.
+*/
+SELECT LEFT(first_name, 1) AS start_letter, COUNT(*) AS similar_count
+FROM customer
+GROUP BY 1
+ORDER BY 2 DESC;
+
+/*2. 
+Use the customer table and a CASE statement to create two groups. One group of customer
+last names that ends with a vowel and a second group of names that ends with a consonant.
+*/
+SELECT CASE WHEN RIGHT(last_name, 1) IN ('a','e','i','o','u') THEN 'Ends in vowel'
+			ELSE 'Ends in consonant'
+			END AS last_letter_classification,
+		COUNT(*) AS num_of_ppl
+FROM customer
+GROUP BY 1;
+
+-----SUBSTRINGS
+SELECT first_name, SUBSTR(first_name,3,4)
+FROM customer;
+
+SELECT first_name, STRPOS(first_name, 'a')
+FROM customer
+
+/* 
+EXERCISE
+One will observe that the titles of all the movies have 2 words in them. Use the film table to
+create first and last name columns that hold the first and last names for each movie
+*/
+
+SELECT title,
+		LEFT(title, STRPOS(title,' ')-1) AS first_word,
+		RIGHT(title, LENGTH(title) - STRPOS(title,' ')) AS second_word
+FROM film
+
+--REPLACE
+SELECT email, REPLACE(email,'-', '@')
+FROM customer
+
+
+/* 
+EXERCISE
+Using all the tools at your disposal, take the payment date column and resolve it into three
+new columns, Year, Month and Date.
+Observe how many payments are made each month and make the months read in alphabetical form
+and not numerical
+*/
+
+
